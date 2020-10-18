@@ -16,9 +16,19 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="gpA-J7-YWz">
-                                <rect key="frame" x="111" y="203" width="246" height="217"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="17o-QR-Xd7">
+                                <rect key="frame" x="54.5" y="322" width="305" height="80.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                            </textField>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mhq-B8-C12">
+                                <rect key="frame" x="55" y="431" width="306" height="45"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="37"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="gpA-J7-YWz">
+                                <rect key="frame" x="155.5" y="667.5" width="103" height="24"/>
                                 <color key="backgroundColor" red="0.0" green="1" blue="0.47843137250000001" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
                                 <state key="normal" title="Button"/>
                                 <connections>
@@ -28,7 +38,24 @@
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="mhq-B8-C12" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" constant="1" id="425-tq-bdy"/>
+                            <constraint firstItem="17o-QR-Xd7" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.736715" id="8YE-Fm-BpV"/>
+                            <constraint firstItem="mhq-B8-C12" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.73913" id="AgM-ad-AUa"/>
+                            <constraint firstItem="mhq-B8-C12" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="FJ7-y3-RJT"/>
+                            <constraint firstItem="17o-QR-Xd7" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="GBQ-WL-85D"/>
+                            <constraint firstItem="17o-QR-Xd7" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.09" id="Gyq-O3-yU4"/>
+                            <constraint firstItem="gpA-J7-YWz" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="1.5" id="Pw8-1G-oNV"/>
+                            <constraint firstItem="17o-QR-Xd7" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="0.8" id="XCD-g6-oqN"/>
+                            <constraint firstItem="gpA-J7-YWz" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.248792" id="d0j-t8-pi7"/>
+                            <constraint firstItem="gpA-J7-YWz" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.0267857" id="qIV-xZ-EzC"/>
+                            <constraint firstItem="gpA-J7-YWz" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="qsp-i6-9ya"/>
+                        </constraints>
                     </view>
+                    <connections>
+                        <outlet property="cityTextField" destination="17o-QR-Xd7" id="Adw-dd-Flu"/>
+                        <outlet property="temperatureLabel" destination="mhq-B8-C12" id="cWM-M3-hh0"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>

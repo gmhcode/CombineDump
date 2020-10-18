@@ -9,28 +9,43 @@ import UIKit
 import Combine
 
 
-
 class ViewController: UIViewController {
 
+    
+    @IBOutlet weak var cityTextField: UITextField!
+    @IBOutlet weak var temperatureLabel: UILabel!
+    
+    private var webservice: WebService = WebService()
+    
     var subs = [AnyCancellable]()
+    var cancellable: AnyCancellable?
     
     @Published var bar = (1...29)
     override func viewDidLoad() {
         super.viewDidLoad()
-        combLatest()
-  
+//        multicastExample()
+        
+        setupPublishers()
+        
+//        self.cancellable = self.webservice.fetchWeather(city: "Houston")
+//            .catch{_ in Just(Weather.placeholder)}
+//            .map{"\($0.temp ?? 0.00)℉"}
+//            .assign(to: \.text, on: self.temperatureLabel)
+//
     }
+    
+    
     
     @IBAction func buttonTapped(_ sender: Any) {
         barChanged()
     }
     func publishedExample() {
-        $bar.sink() { val in
+        $bar.map{$0}.sink() { val in
             print("new bar value ", val)
             //If we dont store this in subs, this functionality cannot get called
         }.store(in: &subs)
         
-        $bar.sink() { val in
+        $bar.map{$0}.sink() { val in
             print("new bar value 2", val)
             //If we dont store this in subs, this functionality cannot get called
         }.store(in: &subs)
@@ -41,6 +56,163 @@ class ViewController: UIViewController {
         print("subs count ",subs.count)
     }
 }
+// MARK: - WEather App
+extension ViewController {
+    func setupPublishers() {
+        let publisher = NotificationCenter.default.publisher(for: UITextField.textDidChangeNotification, object: self.cityTextField)
+        
+        self.cancellable = publisher.compactMap {
+            ($0.object as! UITextField).text?.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)
+                
+        }.debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+        .flatMap{ city in
+            return self.webservice.fetchWeather(city: city)
+                .catch{_ in Empty()}
+                .map{$0}
+                
+        }.sink {
+            self.temperatureLabel.text = "\($0.temp ?? 0.00)℉"
+        }
+    }
+}
+// MARK: - Share
+extension ViewController {
+    
+    func multicastExample() {
+        let subject = PassthroughSubject<Data, URLError>()
+        
+        guard let url = URL(string: "https://jsonplaceholder.typicode.com/posts") else { return }
+        //The network request only got fired once if there are multiple subscribers
+        let request = URLSession.shared.dataTaskPublisher(for: url).map(\.data).print().multicast(subject: subject)
+        
+        _ = request.sink(receiveCompletion: {_ in}, receiveValue: {
+            print("subject 1")
+            print($0)
+        })
+        
+        _ = request.sink(receiveCompletion: {_ in}, receiveValue: {
+            print("subject 2")
+            print($0)
+        })
+        
+        _  = request.sink(receiveCompletion: { _ in }, receiveValue: {
+            print("subject 3")
+            print($0)
+        })
+        request.connect()
+        subject.send(Data())
+        
+    }
+    
+    func shareExample() {
+        
+        
+        guard let url = URL(string: "https://jsonplaceholder.typicode.com/posts") else { return }
+        //The network request only got fired once if there are multiple subscribers
+        let request = URLSession.shared.dataTaskPublisher(for: url).map(\.data).print().share()
+        
+        _ = request.sink(receiveCompletion: {_ in}, receiveValue: {
+            print($0)
+        })
+        
+        _ = request.sink(receiveCompletion: {_ in}, receiveValue: {
+            print($0)
+        })
+       
+    }
+    
+}
+
+// MARK: - Timers
+extension ViewController {
+    // MARK: - DispatchQueue
+    func dispatchQueueExample() {
+        let queue = DispatchQueue.main
+        let source = PassthroughSubject<Int, Never>()
+        var counter = 0
+        cancellable = queue.schedule(after: queue.now, interval: .seconds(1)) {
+            source.send(counter)
+            counter += 1
+        } as? AnyCancellable
+        
+        let subscription = source.sink {
+            print($0)
+        }.store(in: &subs)
+    }
+    
+    
+    // MARK: - Twimer
+    func counterTimer() {
+        cancellable = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+            .scan(0){counter, _ in
+                counter + 1
+            }.sink {
+                print($0)
+            }
+    }
+    
+    func timers() {
+        let runLoop = RunLoop.main
+        let subscription = runLoop.schedule(after: runLoop.now, interval: .seconds(2), tolerance: .milliseconds(100), options: nil) {
+            print("Timer fired")
+        }
+        runLoop.schedule(after: .init(Date(timeIntervalSinceNow: 3.0))) {
+            subscription.cancel()
+        }
+    }
+}
+
+// MARK: - Debugging combine
+extension ViewController {
+    
+    // MARK: - using Debugger
+    
+    func usingDebuggerExample() {
+        let publisher = (1...10).publisher
+//        self.cancellable = publisher
+//            .breakpointOnError()
+//            .sink {
+//            print($0)
+//        }
+        self.cancellable = publisher
+            .breakpoint(receiveOutput: { value in
+                return value > 9
+            } )
+            .sink {
+            print($0)
+        }
+    }
+    
+    // MARK: - Printing Events
+    func printingEventsEx(){
+        let publisher = (1...20).publisher
+        _ = publisher
+            .print("Debugging")
+            .sink { (val) in
+            print(val)
+        }
+    }
+    
+    //use handleEvents to find out why its not working
+    func handleEvents() {
+        guard let url = URL(string: "https://jsonplaceholder.typicode.com/posts") else { return }
+        let request = URLSession.shared.dataTaskPublisher(for: url)
+        
+        _ = request
+            .handleEvents(receiveSubscription: {_ in print("Sub Received")}, receiveOutput: {_ in print("received output")}, receiveCompletion: {_ in print("received completion")}, receiveCancel: { print("received cancel")}, receiveRequest: {_ in print("Received Request")})
+            .sink(receiveCompletion: {_ in print("finished")}) { (data, response) in
+            print(data)
+            }
+            // this is why its not working
+            //.store(in: &subs)
+        
+//        prints
+//        Sub Received
+//        Received Request
+//        received cancel
+    }
+}
+
 // MARK: - Combining Operators
 extension ViewController {
     
@@ -114,7 +286,7 @@ extension ViewController {
         
         
         
-        numbers.append(11,12)
+        _ = numbers.append(11,12)
             .sink{print($0)}
 //        prints
 //        1
@@ -132,7 +304,7 @@ extension ViewController {
         let numbers = (1...5).publisher
         let publisher2 = (500...510).publisher
         
-        numbers.prepend(100,101)
+        _ = numbers.prepend(100,101)
             .sink {
             print($0)
         }
@@ -144,7 +316,7 @@ extension ViewController {
 //        3
 //        4
 //        5
-        numbers.prepend(100,101)
+        _ = numbers.prepend(100,101)
             .prepend(publisher2)
             .sink {
             print($0)
@@ -178,11 +350,11 @@ extension ViewController {
     func prefix() {
         let numbers = (1...10).publisher
         
-        numbers.prefix(2).sink{print($0)}
+        _ = numbers.prefix(2).sink{print($0)}
 //        prints
 //        1
 //        2
-        numbers.prefix(while: {$0 < 4}).sink{print($0)}
+        _ = numbers.prefix(while: {$0 < 4}).sink{print($0)}
 //        prints
 //        1
 //        2
@@ -228,28 +400,28 @@ extension ViewController {
     func dropWhile() {
         let numbers = (1...10).publisher
         
-        numbers.drop(while: {$0 % 3 != 0}).sink(receiveValue: {print($0)})
+        _ = numbers.drop(while: {$0 % 3 != 0}).sink(receiveValue: {print($0)})
     }
     func last() {
         let numbers = (1...9).publisher
         
-        numbers.last(where: {$0 % 2 == 0}).sink(receiveValue: {print($0)})
+        _ = numbers.last(where: {$0 % 2 == 0}).sink(receiveValue: {print($0)})
     }
     func first() {
         let numbers = (1...9).publisher
         
-        numbers.first(where: {$0 % 2 == 0}).sink(receiveValue: {print($0)})
+        _ = numbers.first(where: {$0 % 2 == 0}).sink(receiveValue: {print($0)})
         
     }
         
     func ignoreOutput() {
         let numbers = (1...5000).publisher
         
-        numbers.ignoreOutput().sink(receiveCompletion: {print($0)}, receiveValue: {print($0)})}
+        _ = numbers.ignoreOutput().sink(receiveCompletion: {print($0)}, receiveValue: {print($0)})}
     }
     
     func compactMap() {
-        let strings = ["a","b","c","d","t","3.34","4.12"].publisher.compactMap{Float($0)}.sink {
+        let _ = ["a","b","c","d","t","3.34","4.12"].publisher.compactMap{Float($0)}.sink {
             print($0)
         }
     }
@@ -257,7 +429,7 @@ extension ViewController {
     func removeDuplicates1() {
         let words = "apple apple fruit apple mango watermelon apple".components(separatedBy: " ").publisher
         
-        words.removeDuplicates().sink {
+        _ = words.removeDuplicates().sink {
             print($0)
         }
         
@@ -266,9 +438,9 @@ extension ViewController {
     func filteringExample1() {
         
        
-        var numbers = (1...29).publisher
+        let numbers = (1...29).publisher
 
-        let numberArray = [Int]()
+        let _ = [Int]()
         
         _ = numbers.filter {$0 % 2 == 0}
             .sink{
@@ -287,7 +459,7 @@ extension ViewController {
     func scanExample() {
         //accumulates all the previous values into a single value, so "value" is an accumulation of all the previous values
         let publisher = (1...10).publisher
-        publisher.scan([]) {numbers, value -> [Int] in
+        _ = publisher.scan([]) {numbers, value -> [Int] in
             return numbers + [value]
         }.sink {
             print($0)
